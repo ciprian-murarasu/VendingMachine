@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+    <script th:src="@{https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js}"></script>
+    <meta charset="UTF-8"/>
+    <title>Vending Machine</title>
+</head>
+<body>
+<a th:href="@{/maintenance}">
+    <div>Maintenance</div>
+</a><br><br>
+<form th:action="@{/}" method="post">
+    <table>
+        <tr>
+            <th>Insert money<br><br></th>
+            <th>Select product<br><br></th>
+        </tr>
+        <tr>
+            <td style="border:none">
+                <table id="coins_table">
+                    <tr th:each="coin : ${coins}">
+                        <td><input type="button" th:id="${'coin_value_'+coin.value}"
+                                   th:value="${coin.value}+(${coin.value}==1?' leu':' lei')"><br>
+                            <input type="number" style="width:0" hidden th:name="${'coin_value_'+coin.value}" value="0">
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td style="border:none">
+                <table>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th style="width: 130px">Unit of quantity</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Select</th>
+                        <th></th>
+                    </tr>
+                    <tr th:each="product : ${products}">
+                        <td th:text="${product.id}"></td>
+                        <td th:text="${product.name}"></td>
+                        <td th:text="${product.unitQty}"></td>
+                        <td th:text="${product.price}"></td>
+                        <td th:text="${product.stock}"></td>
+                        <td><input type="radio" th:id="${'price_'+product.price}" name="product_id"
+                                   th:value="${product.id}" required></td>
+                        <td hidden><input type="number" th:name="${'price_'+product.price}" th:value="${product.price}">
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <p>Payed:
+        <span id="payed" th:text="${payedAmount}?:0">0</span>
+        <input type="number" hidden name="payed" value="0"/></p>
+    <p class="error-message" id="error_message" th:text="${errorMessage}"></p>
+    <h4>Available money: </h4>
+    <table>
+        <tr>
+            <th>Id</th>
+            <th>Value</th>
+            <th>Stock</th>
+        </tr>
+        <tr th:each="coin : ${coins}">
+            <td th:text="${coin.id}"></td>
+            <td th:text="${coin.value}"></td>
+            <td th:text="${coin.stock}"></td>
+            <td hidden><input type="number" th:name="${'coin_stock_'+coin.value}" th:value="${coin.stock}"></td>
+        </tr>
+    </table>
+    <br>
+    <input type="submit" style="width: 55px" value="Buy">
+    <input type="button" id="reset" value="Reset" onclick="resetSelection()">
+</form>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var products = /*[[${products}]]*/ 'default';
+    var coins = /*[[${coins}]]*/ 'default';
+    /*]]>*/
+</script>
+<script>
+    var radioButtons = $("[type='radio']");
+    radioButtons.prop("checked", false);
+
+    $("input[id^='coin_value']").click(function () {
+        $("#error_message").text("");
+        $("#payed").text(parseInt($("#payed").text()) + parseInt(this.value));
+        $("input[name='payed']").val(parseInt($("#payed").text()));
+        var id = $(this).attr("id");
+        $("input[name='" + id + "']").val(parseInt($("input[name='" + id + "']").val()) + 1);
+    });
+
+    function resetSelection() {
+        $("input[name^='coin_value']").val("0");
+        $("#payed").text("0");
+        $("input[name='payed']").val("0");
+        radioButtons.prop("checked", false);
+    }
+
+    $("#buy").click(function (e) {
+        var isChecked = false;
+        for (var i = 0; i < radioButtons.length; i++) {
+            if (radioButtons.eq(i).prop("checked")) {
+                isChecked = true;
+                break;
+            }
+        }
+        if (isChecked) {
+            $("form").submit();
+        } else {
+            $("#error_message").text("No product selected!");
+            e.preventDefault();
+        }
+    });
+
+    radioButtons.click(function () {
+        var id = $(this).attr("id");
+        var selectedProductPrice = parseInt($("input[name='" + id + "']").val());
+        var payedAmount = parseInt($("#payed").text());
+        var rest = payedAmount - selectedProductPrice;
+        var selectedProductStock;
+        for (var prod in products) {
+            if (products[prod]['id'] === parseInt($(this).val()))
+                selectedProductStock = products[prod]['stock'];
+        }
+        if (selectedProductStock === 0) {
+            $(this).prop("checked", false);
+            if (payedAmount > 0) {
+                $("#error_message").text("Out of stock!");
+            } else {
+                $("#error_message").text("Insufficient funds!");
+            }
+        }
+        else {
+            if (rest < 0) {
+                $("#error_message").text("Insufficient funds!");
+                $(this).prop("checked", false);
+            } else {
+                $("#error_message").text("");
+                var coinsForRest = [coins.length];
+                var canPayRest = true;
+                for (i = 0; i < coins.length; i++) {
+                    var currentCoinValue = coins[i]['value'];
+                    if (coins[i]['stock'] > 0) {
+                        coinsForRest[i] = parseInt(rest / currentCoinValue);
+                        rest -= coinsForRest[i] * currentCoinValue;
+                        if (coinsForRest[i] > parseInt($("[name='coin_stock_" + currentCoinValue + "']").val())) {
+                            canPayRest = false;
+                        }
+                    }
+                }
+                if (!canPayRest) {
+                    $("#error_message").text("Unable to pay back rest!");
+                    $(this).prop("checked", false);
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

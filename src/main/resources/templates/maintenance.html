@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+    <script th:src="@{https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js}"></script>
+    <meta charset="UTF-8"/>
+    <title>Vending Machine</title>
+</head>
+<body>
+<h3>Maintenance page</h3>
+<a th:href="@{/}">
+    <div>Go back</div>
+</a>
+<h4>Products</h4>
+<a th:href="@{/add_product}">
+    <div>Add product</div>
+</a><br><br>
+<table id="products-table">
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th style="width:130px">Unit of quantity</th>
+        <th>Price</th>
+        <th>Stock</th>
+        <th></th>
+        <th></th>
+        <th style="width: 430px"></th>
+    </tr>
+    <tr th:each="product : ${products}">
+        <td th:text="${product.id}"></td>
+        <td th:text="${product.name}"></td>
+        <td th:text="${product.unitQty}"></td>
+        <td th:text="${product.price}"></td>
+        <td th:text="${product.stock}"></td>
+        <td><a href="#" class="edit-button">
+            <div>Edit product</div>
+        </a></td>
+        <td>
+            <form th:action="@{/delete_product/{id}(id=${product.id})}">
+                <input type="submit" th:id="${'delete-product-'+product.id}" value="Delete product">
+            </form>
+        </td>
+        <td class="edit-rows">
+            <form th:action="@{/update_product/{id}(id=${product.id})}" method="post">
+                <label class="default-label">
+                    New price:
+                    <input type="number" required min="1" th:name="${'new_price_for_product_id_'+product.id}"
+                           th:value="${product.price}">
+                </label>
+                <label class="default-label">
+                    New stock:
+                    <input type="number" required min="0" th:name="${'new_stock_for_product_id_'+product.id}"
+                           th:value="${product.stock}">
+                </label>
+                <input type="submit" value="Save">
+                <span class="error-message"></span>
+            </form>
+        </td>
+    </tr>
+</table>
+<br>
+<hr align="left">
+<h4>Coins</h4>
+<a th:href="@{/add_coin}">
+    <div>Add coin</div>
+</a><br><br>
+<table id="coins-table">
+    <tr>
+        <th>Id</th>
+        <th>Value</th>
+        <th>Stock</th>
+        <th></th>
+        <th></th>
+        <th style="width: 280px"></th>
+    </tr>
+    <tr th:each="coin : ${coins}">
+        <td th:text="${coin.id}"></td>
+        <td th:text="${coin.value}"></td>
+        <td th:text="${coin.stock}"></td>
+        <td><a href="#" class="edit-button">
+            <div>Edit coin</div>
+        </a></td>
+        <td>
+            <form th:action="@{/delete_coin/{id}(id=${coin.id})}">
+                <input type="submit" th:id="${'delete-coin-'+coin.id}" value="Delete coin">
+            </form>
+        </td>
+        <td class="edit-rows">
+            <form th:action="@{/update_coin/{id}(id=${coin.id})}" method="post">
+                <label class="default-label">
+                    New stock:
+                    <input type="number" required min="0" th:name="${'new_stock_for_coin_id_'+coin.id}"
+                           th:value="${coin.stock}">
+                </label>
+                <input type="submit" value="Save">
+                <span class="error-message"></span>
+            </form>
+        </td>
+    </tr>
+</table>
+<!--<p class="error-message" th:text="${errorMessage}"></p>-->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var products = /*[[${products}]]*/ 'default';
+    var coins = /*[[${coins}]]*/ 'default';
+    /*]]>*/
+</script>
+<script>
+    $("hr").width($("#products-table").width());
+
+    $(".edit-button").click(function () {
+        $("hr").width($("#products-table").width());
+        var cellToShow = $(this).parent().nextAll(".edit-rows");
+        var cellsToHide = $(".edit-rows").not(cellToShow);
+        if (cellToShow.css("display")==="none") {
+            cellToShow.show();
+            cellsToHide.hide();
+        } else {
+            cellToShow.hide();
+        }
+    });
+
+    function reverse(string) {
+        var reversedChars = string.split("-").reverse();
+        return reversedChars.join("-");
+    }
+
+    $("input[id^='delete']").click(function (e) {
+        var reversedId = reverse($(this).attr("id"));
+        var entityId = parseInt(reversedId);
+        var text = "Warning! This action is irreversible! Are you sure you want to delete this ";
+        if (reversedId.includes("product")) {
+            text += "product?\n Id = '" + entityId;
+            for (var prod in products) {
+                if (products[prod]['id'] === entityId) {
+                    text += "', Name = '" + products[prod]["name"] + "', Unit of qty = '" + products[prod]["unitQty"] +
+                        "', Price = '" + products[prod]["price"] + "', Stock = '" + products[prod]["stock"] + "'";
+                    break;
+                }
+            }
+        } else {
+            text += "coin?\n Id = '" + entityId;
+            for (var coin in coins) {
+                if (coins[coin]['id'] === entityId) {
+                    text += "', Value = '" + coins[coin]["value"] + "', Stock = '" + coins[coin]["stock"] + "'";
+                    break;
+                }
+            }
+        }
+        if (!confirm(text)) {
+            e.preventDefault();
+        }
+    });
+
+    //Varianta 2
+    // $("input[id^='delete']").click(function (e) {
+    //     var entityProperties, entityValues;
+    //     var tableId = $(this).parents("table").attr("id");
+    //     var text = "Warning! This action is irreversible! Are you sure you want to delete this ";
+    //     if (tableId.includes("product")) {
+    //         text += "product?\n";
+    //     } else {
+    //         text += "coin?\n";
+    //     }
+    //     entityProperties = $("#" + tableId + " th");
+    //     console.log(entityProperties);
+    //     entityValues = $(this).parent().parent().prev().prevAll();
+    //     console.log(entityValues);
+    //     for (var i = entityValues.length - 1; i >= 0; i--) {
+    //         text += entityProperties.eq(entityValues.length - 1 - i).text() + " = '" + entityValues.eq(i).text() + "' ";
+    //     }
+    //     if (!confirm(text)) {
+    //         e.preventDefault();
+    //     }
+    // });
+</script>
+</body>
+</html>

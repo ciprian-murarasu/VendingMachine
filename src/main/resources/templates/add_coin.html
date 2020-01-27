@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+    <script th:src="@{https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js}"></script>
+    <meta charset="UTF-8"/>
+    <title>Vending Machine</title>
+</head>
+<body>
+<form th:action="@{/add_coin}" th:object="${coin}" method="post" class="inline-forms">
+    <div>
+        <label for="name">Value</label>
+        <input type="number" id="name" th:field="*{value}">
+        <span class="error-message" th:if="${#fields.hasErrors('value')}" th:errors="*{value}"></span>
+    </div>
+    <div>
+        <label for="stock">Stock</label>
+        <input type="number" id="stock" th:field="*{stock}">
+        <span class="error-message" th:if="${#fields.hasErrors('stock')}" th:errors="*{stock}"></span>
+    </div>
+    <p class="error-message" th:text="${errorMessage}"></p>
+    <input type="submit" value="Add coin">
+</form>
+<a th:href="@{/maintenance}">
+    <div>Cancel</div>
+</a>
+</body>
+</html>
