@@ -53,7 +53,7 @@ a:visited {
 }
 
 .inline-forms {
-    display: inline
+    display: inline;
 }
 
 a div, input[type="button"], input[type="submit"] {
